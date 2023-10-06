@@ -1,42 +1,27 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"os/exec"
 
+	"github.com/aleksandersh/tuiPack/config"
 	"github.com/mattn/go-shellwords"
 	"github.com/rivo/tview"
-	"gopkg.in/yaml.v3"
 )
-
-type Config struct {
-	Name     string    `yaml:"name"`
-	Commands []Command `yaml:"commands"`
-}
-
-type Command struct {
-	Name        string `yaml:"name"`
-	Description string `yaml:"description"`
-	Script      string `yaml:"script"`
-}
 
 func main() {
 	if len(os.Args) < 2 {
 		log.Fatalf("missing config argument")
 	}
 	configFile := os.Args[1]
-	config, err := readConfig(configFile)
+	config, err := config.ReadConfigFromYamlFile(configFile)
 	if err != nil {
 		log.Fatalf("failed to read config: %v", err)
 	}
 
 	app := tview.NewApplication()
-	contentView, err := createContentView(app, config)
-	if err != nil {
-		log.Fatalf("failed to create content view: %v", err)
-	}
+	contentView := createContentView(app, config)
 
 	app.SetRoot(contentView, true).SetFocus(contentView)
 	if err := app.Run(); err != nil {
@@ -45,20 +30,7 @@ func main() {
 	app.Stop()
 }
 
-func readConfig(path string) (*Config, error) {
-	file, err := os.ReadFile(path)
-	if err != nil {
-		return nil, fmt.Errorf("error in os.ReadFile: %w", err)
-	}
-	config := Config{}
-	err = yaml.Unmarshal(file, &config)
-	if err != nil {
-		return nil, fmt.Errorf("error in yaml.Unmarshal: %w", err)
-	}
-	return &config, nil
-}
-
-func createContentView(app *tview.Application, config *Config) (tview.Primitive, error) {
+func createContentView(app *tview.Application, config *config.Pack) tview.Primitive {
 	parser := shellwords.NewParser()
 	parser.ParseEnv = true
 
@@ -71,37 +43,28 @@ func createContentView(app *tview.Application, config *Config) (tview.Primitive,
 		SetBorder(true)
 
 	for _, command := range config.Commands {
-		err := addCommand(app, parser, commandsView, &command)
-		if err != nil {
-			return nil, err
-		}
+		addCommandView(app, parser, commandsView, command)
 	}
 
 	commandsView.Focus(func(p tview.Primitive) {})
 
-	return commandsView, nil
+	return commandsView
 }
 
-func addCommand(app *tview.Application, parser *shellwords.Parser, listView *tview.List, command *Command) error {
-	args, err := parser.Parse(command.Script)
-	if err != nil {
-		return fmt.Errorf("error in parser.Parse: %w", err)
-	}
-
+func addCommandView(app *tview.Application, parser *shellwords.Parser, listView *tview.List, command config.Command) {
 	listView.AddItem(command.Name, command.Description, 0, func() {
-		execute(app, args)
+		app.Stop()
+		executeCommand(command.Args)
 	})
-	return nil
 }
 
-func execute(app *tview.Application, args []string) {
+func executeCommand(args []string) {
 	name := args[0]
 	args = args[1:]
 	cmd := exec.Command(name, args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	app.Stop()
 	err := cmd.Run()
 
 	if err != nil {
