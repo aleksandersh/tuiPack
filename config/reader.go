@@ -14,13 +14,11 @@ func ReadConfigFromYamlFile(path string) (*Pack, error) {
 		return nil, fmt.Errorf("error in os.ReadFile: %w", err)
 	}
 	pack := &Pack{}
-	err = yaml.Unmarshal(file, pack)
-	if err != nil {
+	if err = yaml.Unmarshal(file, pack); err != nil {
 		return nil, fmt.Errorf("error in yaml.Unmarshal: %w", err)
 	}
 
-	err = parseCommandsArgs(pack)
-	if err != nil {
+	if err = parseCommandsArgs(pack); err != nil {
 		return nil, err
 	}
 
