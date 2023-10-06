@@ -23,26 +23,42 @@ type Command struct {
 }
 
 func main() {
+	if len(os.Args) < 2 {
+		log.Fatalf("missing config argument")
+	}
+	configFile := os.Args[1]
+	config, err := readConfig(configFile)
+	if err != nil {
+		log.Fatalf("failed to read config: %v", err)
+	}
+
 	app := tview.NewApplication()
-	contentView := createContentView(app)
+	contentView, err := createContentView(app, config)
+	if err != nil {
+		log.Fatalf("failed to create content view: %v", err)
+	}
+
 	app.SetRoot(contentView, true).SetFocus(contentView)
 	if err := app.Run(); err != nil {
-		fmt.Printf("Error running application: %s\n", err)
+		log.Fatalf("failed to run tui application: %v", err)
 	}
 	app.Stop()
 }
 
-func createContentView(app *tview.Application) tview.Primitive {
-	file, err := os.ReadFile("./tuiPackConfig.yml")
+func readConfig(path string) (*Config, error) {
+	file, err := os.ReadFile(path)
 	if err != nil {
-		log.Fatal(err)
+		return nil, fmt.Errorf("error in os.ReadFile: %w", err)
 	}
 	config := Config{}
 	err = yaml.Unmarshal(file, &config)
 	if err != nil {
-		log.Fatal(err)
+		return nil, fmt.Errorf("error in yaml.Unmarshal: %w", err)
 	}
+	return &config, nil
+}
 
+func createContentView(app *tview.Application, config *Config) (tview.Primitive, error) {
 	parser := shellwords.NewParser()
 	parser.ParseEnv = true
 
@@ -55,23 +71,27 @@ func createContentView(app *tview.Application) tview.Primitive {
 		SetBorder(true)
 
 	for _, command := range config.Commands {
-		addCommand(app, parser, commandsView, &command)
+		err := addCommand(app, parser, commandsView, &command)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	commandsView.Focus(func(p tview.Primitive) {})
 
-	return commandsView
+	return commandsView, nil
 }
 
-func addCommand(app *tview.Application, parser *shellwords.Parser, listView *tview.List, command *Command) {
+func addCommand(app *tview.Application, parser *shellwords.Parser, listView *tview.List, command *Command) error {
 	args, err := parser.Parse(command.Script)
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("error in parser.Parse: %w", err)
 	}
 
 	listView.AddItem(command.Name, command.Description, 0, func() {
 		execute(app, args)
 	})
+	return nil
 }
 
 func execute(app *tview.Application, args []string) {
@@ -85,6 +105,10 @@ func execute(app *tview.Application, args []string) {
 	err := cmd.Run()
 
 	if err != nil {
-		log.Fatal(err)
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			os.Exit(exitErr.ExitCode())
+		} else {
+			log.Fatalf("error in cmd.Run: %v", err)
+		}
 	}
 }
