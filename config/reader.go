@@ -3,9 +3,15 @@ package config
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/mattn/go-shellwords"
 	"gopkg.in/yaml.v3"
+)
+
+const (
+	ENV_TUI_PACK_CONFIG_DIR    = "TUI_PACK_CONFIG_DIR"
+	ENV_TUI_PACK_EXECUTION_DIR = "TUI_PACK_EXECUTION_DIR"
 )
 
 func ReadConfigFromYamlFile(path string) (*Pack, error) {
@@ -18,16 +24,35 @@ func ReadConfigFromYamlFile(path string) (*Pack, error) {
 		return nil, fmt.Errorf("error in yaml.Unmarshal: %w", err)
 	}
 
-	if err = parseCommandsArgs(pack); err != nil {
+	configDir, err := filepath.Abs(filepath.Dir(path))
+	if err != nil {
+		return nil, fmt.Errorf("error in filepath.Abs: %w", err)
+	}
+
+	executionDir, err := os.Getwd()
+	if err != nil {
+		return nil, fmt.Errorf("error in os.Getwd: %w", err)
+	}
+
+	if err = parseCommandsArgs(configDir, executionDir, pack); err != nil {
 		return nil, err
 	}
 
 	return pack, nil
 }
 
-func parseCommandsArgs(pack *Pack) error {
+func parseCommandsArgs(configDir string, executionDir string, pack *Pack) error {
 	parser := shellwords.NewParser()
 	parser.ParseEnv = true
+	parser.Getenv = func(env string) string {
+		if env == ENV_TUI_PACK_EXECUTION_DIR {
+			return executionDir
+		}
+		if env == ENV_TUI_PACK_CONFIG_DIR {
+			return configDir
+		}
+		return os.Getenv(env)
+	}
 	parsedCommands := make([]Command, 0, len(pack.Commands))
 	for _, command := range pack.Commands {
 		args, err := parser.Parse(command.Script)
