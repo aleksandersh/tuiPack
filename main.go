@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
 
@@ -18,7 +19,10 @@ func main() {
 		log.Fatalf("failed to read config: %v", err)
 	}
 
-	if err = tui.RunApp(config); err != nil {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	if err = tui.RunApp(ctx, config); err != nil {
 		log.Fatalf("failed to run tui application: %v", err)
 	}
 }

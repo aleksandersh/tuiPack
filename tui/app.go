@@ -1,17 +1,17 @@
 package tui
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/aleksandersh/tuiPack/config"
 	"github.com/aleksandersh/tuiPack/executor"
-	"github.com/mattn/go-shellwords"
 	"github.com/rivo/tview"
 )
 
-func RunApp(config *config.Pack) error {
+func RunApp(ctx context.Context, config *config.Pack) error {
 	app := tview.NewApplication()
-	contentView := createContentView(app, config)
+	contentView := createContentView(ctx, app, config)
 
 	app.SetRoot(contentView, true).SetFocus(contentView)
 	if err := app.Run(); err != nil {
@@ -21,12 +21,8 @@ func RunApp(config *config.Pack) error {
 	return nil
 }
 
-func createContentView(app *tview.Application, config *config.Pack) tview.Primitive {
-	parser := shellwords.NewParser()
-	parser.ParseEnv = true
-
+func createContentView(ctx context.Context, app *tview.Application, config *config.Pack) tview.Primitive {
 	commandsView := tview.NewList()
-
 	commandsView.SetHighlightFullLine(true).
 		ShowSecondaryText(false).
 		SetWrapAround(false).
@@ -34,7 +30,7 @@ func createContentView(app *tview.Application, config *config.Pack) tview.Primit
 		SetBorder(true)
 
 	for _, command := range config.Commands {
-		addCommandView(app, parser, commandsView, command)
+		addCommandView(ctx, app, commandsView, command)
 	}
 
 	commandsView.Focus(func(p tview.Primitive) {})
@@ -42,9 +38,9 @@ func createContentView(app *tview.Application, config *config.Pack) tview.Primit
 	return commandsView
 }
 
-func addCommandView(app *tview.Application, parser *shellwords.Parser, listView *tview.List, command config.Command) {
+func addCommandView(ctx context.Context, app *tview.Application, listView *tview.List, command config.Command) {
 	listView.AddItem(command.Name, command.Description, 0, func() {
 		app.Stop()
-		executor.ExecuteCommand(command.Args)
+		executor.ExecuteCommand(ctx, command.Args)
 	})
 }
