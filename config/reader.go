@@ -55,12 +55,23 @@ func parseCommandsArgs(configDir string, executionDir string, pack *Pack) error 
 	}
 	parsedCommands := make([]Command, 0, len(pack.Commands))
 	for _, command := range pack.Commands {
+		if command.Script == "" {
+			return fmt.Errorf("missing command script: %v", command)
+		}
 		args, err := parser.Parse(command.Script)
 		if err != nil {
 			return fmt.Errorf("error in parser.Parse: %w", err)
 		}
+		name := command.Name
+		if name == "" {
+			if command.Alias != "" {
+				name = command.Alias
+			} else {
+				name = command.Script
+			}
+		}
 		parsedCommands = append(parsedCommands, Command{
-			Name:        command.Name,
+			Name:        name,
 			Description: command.Description,
 			Script:      command.Script,
 			Alias:       command.Alias,

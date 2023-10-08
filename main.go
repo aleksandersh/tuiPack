@@ -56,6 +56,9 @@ func printAliases(args *args, config *config.Pack) {
 	fmt.Printf("Usage: tuiPack --script ALIAS\n\n")
 	fmt.Printf("Aliases for available scripts:\n")
 	for _, command := range config.Commands {
+		if command.Alias == "" {
+			continue
+		}
 		description := command.Description
 		if description == "" {
 			description = command.Name
