@@ -41,6 +41,6 @@ func createContentView(ctx context.Context, app *tview.Application, config *conf
 func addCommandView(ctx context.Context, app *tview.Application, listView *tview.List, command config.Command) {
 	listView.AddItem(command.Name, command.Description, 0, func() {
 		app.Stop()
-		executor.ExecuteCommand(ctx, command.Args)
+		executor.ExecuteCommand(ctx, command.Args, command.Environment)
 	})
 }

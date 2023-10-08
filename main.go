@@ -76,7 +76,7 @@ func printAliases(args *args, config *config.Pack) {
 func executeScript(ctx context.Context, alias string, config *config.Pack) {
 	for _, command := range config.Commands {
 		if command.Alias == alias {
-			executor.ExecuteCommand(ctx, command.Args)
+			executor.ExecuteCommand(ctx, command.Args, command.Environment)
 			return
 		}
 	}

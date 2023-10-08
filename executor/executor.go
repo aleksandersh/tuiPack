@@ -9,12 +9,16 @@ import (
 	"syscall"
 )
 
-func ExecuteCommand(ctx context.Context, args []string) {
+func ExecuteCommand(ctx context.Context, args []string, env []string) {
 	name := args[0]
 	args = args[1:]
 	cmd := exec.CommandContext(ctx, name, args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
+
+	if len(env) > 0 {
+		cmd.Env = append(cmd.Environ(), env...)
+	}
 
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)

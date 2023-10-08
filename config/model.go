@@ -7,9 +7,10 @@ type Pack struct {
 }
 
 type Command struct {
-	Name        string `yaml:"name"`
-	Description string `yaml:"description"`
-	Script      string `yaml:"script"`
-	Alias       string `yaml:"alias"`
+	Name        string   `yaml:"name"`
+	Description string   `yaml:"description"`
+	Script      string   `yaml:"script"`
+	Alias       string   `yaml:"alias"`
+	Environment []string `yaml:"environment"`
 	Args        []string
 }
