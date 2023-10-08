@@ -11,8 +11,8 @@ import (
 )
 
 const (
-	ENV_TUI_PACK_CONFIG_DIR    = "TUI_PACK_CONFIG_DIR"
-	ENV_TUI_PACK_EXECUTION_DIR = "TUI_PACK_EXECUTION_DIR"
+	envConfigDir    = "TUI_PACK_CONFIG_DIR"
+	envExecutionDir = "TUI_PACK_EXECUTION_DIR"
 )
 
 var (
@@ -61,10 +61,10 @@ func parseCommandsArgs(configDir string, executionDir string, pack *Pack) error 
 		}
 
 		parser.Getenv = func(env string) string {
-			if env == ENV_TUI_PACK_EXECUTION_DIR {
+			if env == envExecutionDir {
 				return executionDir
 			}
-			if env == ENV_TUI_PACK_CONFIG_DIR {
+			if env == envConfigDir {
 				return configDir
 			}
 			value := envEntries[env]
@@ -86,8 +86,8 @@ func parseCommandsArgs(configDir string, executionDir string, pack *Pack) error 
 				name = command.Script
 			}
 		}
-		envExecutionDir := fmt.Sprintf("%s=%s", ENV_TUI_PACK_EXECUTION_DIR, executionDir)
-		envConfigDir := fmt.Sprintf("%s=%s", ENV_TUI_PACK_CONFIG_DIR, configDir)
+		envExecutionDir := fmt.Sprintf("%s=%s", envExecutionDir, executionDir)
+		envConfigDir := fmt.Sprintf("%s=%s", envConfigDir, configDir)
 		environment := append(command.Environment, envExecutionDir, envConfigDir)
 		parsedCommands = append(parsedCommands, Command{
 			Name:        name,

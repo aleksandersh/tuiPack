@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/aleksandersh/tuiPack/config"
+	"github.com/aleksandersh/tuiPack/app/config"
 	"github.com/aleksandersh/tuiPack/executor"
 	"github.com/rivo/tview"
 )
