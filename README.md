@@ -2,6 +2,8 @@
 
 A tool for organizing frequently used commands within the terminal user interface
 
+You can describe a set of commands in a single YAML file and easily access them from the terminal interface
+
 ## Usage
 
 ```bash
