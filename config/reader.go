@@ -63,6 +63,7 @@ func parseCommandsArgs(configDir string, executionDir string, pack *Pack) error 
 			Name:        command.Name,
 			Description: command.Description,
 			Script:      command.Script,
+			Alias:       command.Alias,
 			Args:        args,
 		})
 	}
