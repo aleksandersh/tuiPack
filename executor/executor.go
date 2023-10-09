@@ -15,6 +15,7 @@ func ExecuteCommand(ctx context.Context, args []string, env []string) {
 	cmd := exec.CommandContext(ctx, name, args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdin
 
 	if len(env) > 0 {
 		cmd.Env = append(cmd.Environ(), env...)
