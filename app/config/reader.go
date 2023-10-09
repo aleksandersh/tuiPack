@@ -47,6 +47,12 @@ func ReadConfigFromYamlFile(path string) (*Pack, error) {
 }
 
 func parseCommandsArgs(configDir string, executionDir string, pack *Pack) error {
+	envExecutionDirEntry := fmt.Sprintf("%s=%s", envExecutionDir, executionDir)
+	envConfigDirEntry := fmt.Sprintf("%s=%s", envConfigDir, configDir)
+	packEnvEntries, err := parseEnvEntries(pack.Environment)
+	if err != nil {
+		return err
+	}
 	parser := shellwords.NewParser()
 	parser.ParseEnv = true
 	parsedCommands := make([]Command, 0, len(pack.Commands))
@@ -55,7 +61,7 @@ func parseCommandsArgs(configDir string, executionDir string, pack *Pack) error 
 			return fmt.Errorf("missing command script: %v", command)
 		}
 
-		envEntries, err := parseEnvEntries(command.Environment)
+		commandEnvEntries, err := parseEnvEntries(command.Environment)
 		if err != nil {
 			return err
 		}
@@ -67,8 +73,10 @@ func parseCommandsArgs(configDir string, executionDir string, pack *Pack) error 
 			if env == envConfigDir {
 				return configDir
 			}
-			value := envEntries[env]
-			if value != "" {
+			if value, contains := commandEnvEntries[env]; contains {
+				return value
+			}
+			if value, contains := packEnvEntries[env]; contains {
 				return value
 			}
 			return os.Getenv(env)
@@ -86,9 +94,7 @@ func parseCommandsArgs(configDir string, executionDir string, pack *Pack) error 
 				name = command.Script
 			}
 		}
-		envExecutionDir := fmt.Sprintf("%s=%s", envExecutionDir, executionDir)
-		envConfigDir := fmt.Sprintf("%s=%s", envConfigDir, configDir)
-		environment := append(command.Environment, envExecutionDir, envConfigDir)
+		environment := append(append(pack.Environment, command.Environment...), envExecutionDirEntry, envConfigDirEntry)
 		parsedCommands = append(parsedCommands, Command{
 			Name:        name,
 			Description: command.Description,

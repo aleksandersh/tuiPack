@@ -38,7 +38,11 @@ tuiPack --config ./tuiPackConfig.yml --script list_files
 
 ```yml
 name: My test commands pack
+environment:
+  - HELLO_MESSAGE=HELLO WORLD
 commands:
+  - name: print hello message
+    script: echo "$HELLO_MESSAGE"
   - name: list files
     script: ls -l "$TUI_PACK_EXECUTION_DIR"
     alias: list_files
