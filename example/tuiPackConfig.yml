@@ -1,0 +1,30 @@
+name: Example pack
+version: 1.0.2
+environment:
+  - WELCOME_MESSAGE=HELLO WORLD!
+commands:
+  - name: build TUI Pack - windows (amd64)
+    environment:
+      - GOOS=windows
+      - GOARCH=amd64
+    script: $TUI_PACK_CONFIG_DIR/build.sh windows-amd64.exe
+  - name: build TUI Pack - macos (amd64)
+    environment:
+      - GOOS=darwin
+      - GOARCH=amd64
+    script: $TUI_PACK_CONFIG_DIR/build.sh macos-amd64
+  - name: build TUI Pack - linux (amd64)
+    environment:
+      - GOOS=linux
+      - GOARCH=amd64
+    script: $TUI_PACK_CONFIG_DIR/build.sh linux-amd64
+  - name: print execution dir
+    script: echo "$TUI_PACK_EXECUTION_DIR"
+    alias: print_execution_dir
+  - name: print config dir
+    script: echo "$TUI_PACK_CONFIG_DIR"
+    alias: print_config_dir
+  - name: print welcome message
+    script: echo "$WELCOME_MESSAGE"
+    alias: print_welcome_message
+    description: print message "HELLO WORLD!"

@@ -1,8 +1,12 @@
 # TUI commands pack
 
-A tool for organizing frequently used commands within the terminal user interface
+A tool for organizing frequently used commands within the terminal user interface.
 
-You can describe a set of commands in a single YAML file and easily access them from the terminal interface
+You can describe a set of commands in a single YAML file and easily access them from the terminal interface.
+
+You can follow the example from the [examples catalog](./example).
+
+![tuiPack example](./example/tuiPackExample.gif "Example")
 
 ## Usage
 
@@ -17,6 +21,10 @@ tuiPack --help
 # start the terminal user interface with commands from the specified config
 tuiPack --config ./tuiPackConfig.yml
 ```
+
+#### Hotkeys
+
+`/` - to enter filtering mode
 
 ### Execute a command by an alias
 
@@ -37,20 +45,14 @@ tuiPack --config ./tuiPackConfig.yml --script list_files
 ##### example
 
 ```yml
-name: My test commands pack
+name: command pack name
 environment:
-  - HELLO_MESSAGE=HELLO WORLD
+  - ENV_1=VALUE
 commands:
-  - name: print hello message
-    script: echo "$HELLO_MESSAGE"
-  - name: list files
-    script: ls -l "$TUI_PACK_EXECUTION_DIR"
-    alias: list_files
-    description: list files in the current directory
-  - name: sleep
+  - name: command displayed name
     environment:
-      - TIME_SECONDS=3
-    script: sleep "$TIME_SECONDS"
-    alias: sleep
-    description: sleep for 3 seconds
+    - ENV_2=VALUE
+    script: echo "$ENV_1" "$ENV_2"
+    alias: command_alias_for_terminal
+    description: description of the command
 ```
