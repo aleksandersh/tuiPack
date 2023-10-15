@@ -21,7 +21,7 @@ func ExecuteCommand(ctx context.Context, args []string, env []string) {
 		cmd.Env = append(cmd.Environ(), env...)
 	}
 
-	signals := make(chan os.Signal, 1)
+	signals := make(chan os.Signal, 3)
 	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
 
 	if err := cmd.Start(); err != nil {

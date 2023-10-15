@@ -5,15 +5,24 @@ import (
 	"fmt"
 
 	"github.com/aleksandersh/tuiPack/app/config"
-	"github.com/aleksandersh/tuiPack/executor"
+	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+)
+
+const (
+	keySlash = 47
 )
 
 func RunApp(ctx context.Context, config *config.Pack) error {
 	app := tview.NewApplication()
-	contentView := createContentView(ctx, app, config)
 
-	app.SetRoot(contentView, true).SetFocus(contentView)
+	commandsView := createCommandsView(ctx, app, config)
+	filterView := createFilterView()
+	containerView := createContainerView(commandsView, filterView)
+
+	setupContent(ctx, app, commandsView, filterView, config.Commands)
+
+	app.SetRoot(containerView, true).SetFocus(commandsView)
 	if err := app.Run(); err != nil {
 		return fmt.Errorf("error in app.Run: %w", err)
 	}
@@ -21,7 +30,7 @@ func RunApp(ctx context.Context, config *config.Pack) error {
 	return nil
 }
 
-func createContentView(ctx context.Context, app *tview.Application, config *config.Pack) tview.Primitive {
+func createCommandsView(ctx context.Context, app *tview.Application, config *config.Pack) *tview.List {
 	commandsView := tview.NewList()
 	commandsView.SetHighlightFullLine(true).
 		ShowSecondaryText(false).
@@ -29,18 +38,66 @@ func createContentView(ctx context.Context, app *tview.Application, config *conf
 		SetTitle(config.Name).
 		SetBorder(true)
 
-	for _, command := range config.Commands {
-		addCommandView(ctx, app, commandsView, command)
-	}
-
-	commandsView.Focus(func(p tview.Primitive) {})
-
 	return commandsView
 }
 
-func addCommandView(ctx context.Context, app *tview.Application, listView *tview.List, command config.Command) {
-	listView.AddItem(command.Name, command.Description, 0, func() {
-		app.Stop()
-		executor.ExecuteCommand(ctx, command.Args, command.Environment)
+func createFilterView() *tview.TextArea {
+	filterView := tview.NewTextArea()
+	filterView.SetDisabled(true)
+	filterView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyRune || event.Key() == tcell.KeyBackspace2 {
+			return event
+		}
+		return nil
+	})
+	return filterView
+}
+
+func createContainerView(commandsView tview.Primitive, filterView tview.Primitive) *tview.Flex {
+	containerView := tview.NewFlex()
+	containerView.
+		SetDirection(tview.FlexRow).
+		AddItem(commandsView, 0, 1, true).
+		AddItem(filterView, 1, 0, false)
+	return containerView
+}
+
+func setupContent(ctx context.Context, app *tview.Application, commandsView *tview.List, filterView *tview.TextArea, commands []config.Command) {
+	contentController := newContentController(ctx, app, commandsView, filterView, commands)
+	isFilterViewActive := false
+	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if !isFilterViewActive {
+			if event.Key() == tcell.KeyRune && event.Rune() == keySlash {
+				contentController.ActivateFilter()
+				isFilterViewActive = true
+				return nil
+			}
+			if event.Key() == tcell.KeyEsc {
+				contentController.ResetFilter()
+				return nil
+			}
+		}
+		if !isFilterViewActive && event.Key() == tcell.KeyRune && event.Rune() == keySlash {
+			contentController.ActivateFilter()
+			isFilterViewActive = true
+			return nil
+		}
+		if isFilterViewActive {
+			if event.Key() == tcell.KeyEsc {
+				contentController.CancelFilter()
+				isFilterViewActive = false
+				return nil
+			}
+			if event.Key() == tcell.KeyEnter {
+				contentController.FinishFilter()
+				isFilterViewActive = false
+				return nil
+			}
+		}
+		return event
+	})
+
+	filterView.SetChangedFunc(func() {
+		contentController.RefreshContentByFilter()
 	})
 }
