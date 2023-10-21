@@ -1,14 +1,34 @@
 #!/bin/sh
 
-FILENAME="$1"
-WORKING_DIR="$TUI_PACK_CONFIG_DIR/../"
-FILEPATH="$WORKING_DIR/bin/$FILENAME"
-rm -f "$FILEPATH"
-(cd "$WORKING_DIR" && go build -o "$FILEPATH") || {
-    echo "failed to build"
+platform="$1"
+extension="$2"
+
+project_dir="$(realpath "$TUI_PACK_CONFIG_DIR/../")"
+binaries_dir="$project_dir/bin"
+
+if [ -n "$extension" ]
+then
+file_name="tuiPack.$extension"
+else
+file_name="tuiPack"
+fi
+
+binary_path="$binaries_dir/$file_name"
+archive_name="$file_name-$platform.tar.gz"
+archive_path="$binaries_dir/$archive_name"
+
+rm -f "$archive_path"
+rm -f "$binary_path"
+
+(cd "$project_dir" && go build -o "$binary_path") || {
+    echo "failed to build tuiPack binary"
     exit 1
 }
-(cd "$WORKING_DIR/bin/" && tar -czvf "$FILENAME.tar.gz" "$FILENAME") || {
+
+(cd "$project_dir" && tar -czvf "$archive_path" "$file_name") || {
+    rm -f "$binary_path"
     echo "failed to archive"
     exit 1
 }
+
+# rm -f "$binary_path"
