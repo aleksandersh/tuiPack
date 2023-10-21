@@ -31,4 +31,4 @@ rm -f "$binary_path"
     exit 1
 }
 
-# rm -f "$binary_path"
+rm -f "$binary_path"
