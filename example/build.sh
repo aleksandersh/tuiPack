@@ -4,7 +4,7 @@ platform="$1"
 extension="$2"
 
 project_dir="$(realpath "$TUI_PACK_CONFIG_DIR/../")"
-binaries_dir="$project_dir/bin"
+binaries_dir="$project_dir/.bin"
 
 if [ -n "$extension" ]
 then
