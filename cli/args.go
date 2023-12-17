@@ -1,4 +1,4 @@
-package app
+package cli
 
 import "github.com/alexflint/go-arg"
 

@@ -1,4 +1,4 @@
-package config
+package launcher
 
 import (
 	"errors"
@@ -6,6 +6,9 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/aleksandersh/tuiPack/command"
+	"github.com/aleksandersh/tuiPack/command/script"
+	"github.com/aleksandersh/tuiPack/config"
 	"github.com/mattn/go-shellwords"
 	"gopkg.in/yaml.v3"
 )
@@ -19,12 +22,12 @@ var (
 	errorFailedToParseEnvironment = errors.New("failed to parse environment")
 )
 
-func ReadConfigFromYamlFile(path string) (*Pack, error) {
+func ReadConfigFromYamlFile(path string) (*config.Pack, error) {
 	file, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("error in os.ReadFile: %w", err)
 	}
-	pack := &Pack{}
+	pack := &packDto{}
 	if err = yaml.Unmarshal(file, pack); err != nil {
 		return nil, fmt.Errorf("error in yaml.Unmarshal: %w", err)
 	}
@@ -39,31 +42,32 @@ func ReadConfigFromYamlFile(path string) (*Pack, error) {
 		return nil, fmt.Errorf("error in os.Getwd: %w", err)
 	}
 
-	if err = parseCommandsArgs(configDir, executionDir, pack); err != nil {
+	commands, err := parseCommands(configDir, executionDir, pack)
+	if err != nil {
 		return nil, err
 	}
 
-	return pack, nil
+	return config.New(pack.Name, pack.Version, commands), nil
 }
 
-func parseCommandsArgs(configDir string, executionDir string, pack *Pack) error {
+func parseCommands(configDir string, executionDir string, pack *packDto) ([]command.Command, error) {
 	envExecutionDirEntry := fmt.Sprintf("%s=%s", envExecutionDir, executionDir)
 	envConfigDirEntry := fmt.Sprintf("%s=%s", envConfigDir, configDir)
 	packEnvEntries, err := parseEnvEntries(pack.Environment)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	parser := shellwords.NewParser()
 	parser.ParseEnv = true
-	parsedCommands := make([]Command, 0, len(pack.Commands))
-	for _, command := range pack.Commands {
-		if command.Script == "" {
-			return fmt.Errorf("missing command script: %v", command)
+	parsedCommands := make([]command.Command, 0, len(pack.Commands))
+	for _, cmd := range pack.Commands {
+		if cmd.Script == "" {
+			return nil, fmt.Errorf("missing command script: %v", cmd)
 		}
 
-		commandEnvEntries, err := parseEnvEntries(command.Environment)
+		commandEnvEntries, err := parseEnvEntries(cmd.Environment)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		parser.Getenv = func(env string) string {
@@ -81,31 +85,26 @@ func parseCommandsArgs(configDir string, executionDir string, pack *Pack) error 
 			}
 			return os.Getenv(env)
 		}
-		args, err := parser.Parse(command.Script)
+		args, err := parser.Parse(cmd.Script)
 		if err != nil {
-			return fmt.Errorf("error in parser.Parse: %w", err)
+			return nil, fmt.Errorf("error in parser.Parse: %w", err)
 		}
 
-		name := command.Name
+		name := cmd.Name
 		if name == "" {
-			if command.Alias != "" {
-				name = command.Alias
+			if cmd.Alias != "" {
+				name = cmd.Alias
 			} else {
-				name = command.Script
+				name = cmd.Script
 			}
 		}
-		environment := append(append(pack.Environment, command.Environment...), envExecutionDirEntry, envConfigDirEntry)
-		parsedCommands = append(parsedCommands, Command{
-			Name:        name,
-			Description: command.Description,
-			Script:      command.Script,
-			Alias:       command.Alias,
-			Environment: environment,
-			Args:        args,
-		})
+		environment := append(append(pack.Environment, cmd.Environment...), envExecutionDirEntry, envConfigDirEntry)
+		properties := command.NewProperties(name, cmd.Description, cmd.Alias)
+		scriptFactory := script.ScriptFactory{}
+		script := scriptFactory.CreateComand(properties, args, environment)
+		parsedCommands = append(parsedCommands, script)
 	}
-	pack.Commands = parsedCommands
-	return nil
+	return parsedCommands, nil
 }
 
 func parseEnvEntries(env []string) (map[string]string, error) {

@@ -4,7 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/aleksandersh/tuiPack/app/config"
+	"github.com/aleksandersh/tuiPack/command"
+	"github.com/aleksandersh/tuiPack/config"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
@@ -62,7 +63,7 @@ func createContainerView(commandsView tview.Primitive, filterView tview.Primitiv
 	return containerView
 }
 
-func setupContent(ctx context.Context, app *tview.Application, commandsView *tview.List, filterView *tview.TextArea, commands []config.Command) {
+func setupContent(ctx context.Context, app *tview.Application, commandsView *tview.List, filterView *tview.TextArea, commands []command.Command) {
 	contentController := newContentController(ctx, app, commandsView, filterView, commands)
 	isFilterViewActive := false
 	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {

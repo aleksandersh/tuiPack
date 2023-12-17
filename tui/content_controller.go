@@ -4,8 +4,8 @@ import (
 	"context"
 	"strings"
 
-	"github.com/aleksandersh/tuiPack/app/config"
-	"github.com/aleksandersh/tuiPack/executor"
+	"github.com/aleksandersh/tuiPack/application"
+	"github.com/aleksandersh/tuiPack/command"
 	"github.com/rivo/tview"
 )
 
@@ -23,7 +23,7 @@ type contentController struct {
 	events chan controllerEvent
 }
 
-func newContentController(ctx context.Context, app *tview.Application, commandsView *tview.List, filterView *tview.TextArea, commands []config.Command) *contentController {
+func newContentController(ctx context.Context, app *tview.Application, commandsView *tview.List, filterView *tview.TextArea, commands []command.Command) *contentController {
 	initialCommands := mapCommandsToViewItems(commands)
 	events := make(chan controllerEvent, 100)
 	contentState := contentController{events: events}
@@ -51,8 +51,9 @@ func (cs *contentController) RefreshContentByFilter() {
 	cs.events <- eventRefreshContentByFilter
 }
 
-func processControlsEvents(ctx context.Context, app *tview.Application, commandsView *tview.List, filterView *tview.TextArea, initialCommands []commandViewItem, events chan controllerEvent) {
-	populateCommandsView(ctx, app, commandsView, initialCommands)
+func processControlsEvents(ctx context.Context, tviewApp *tview.Application, commandsView *tview.List, filterView *tview.TextArea, initialCommands []commandViewItem, events chan controllerEvent) {
+	app := application.NewApplication(application.NewController(tviewApp))
+	populateCommandsView(ctx, commandsView, app, initialCommands)
 
 	filteredCommands := initialCommands
 	isFilterViewActive := false
@@ -67,7 +68,7 @@ func processControlsEvents(ctx context.Context, app *tview.Application, commands
 			if currentText == "" {
 				if commandsView.GetCurrentItem() != 0 {
 					commandsView.SetCurrentItem(0)
-					app.Draw()
+					tviewApp.Draw()
 				}
 				return
 			}
@@ -76,17 +77,17 @@ func processControlsEvents(ctx context.Context, app *tview.Application, commands
 			absoluteCommandIndex := getAbsoluteCommandIndex(commandsView, filteredCommands)
 			filteredCommands = initialCommands
 			commandsView.Clear()
-			populateCommandsView(ctx, app, commandsView, filteredCommands)
+			populateCommandsView(ctx, commandsView, app, filteredCommands)
 			commandsView.SetCurrentItem(absoluteCommandIndex)
-			app.Draw()
+			tviewApp.Draw()
 		case eventActivateFilter:
 			if isFilterViewActive {
 				return
 			}
 			isFilterViewActive = true
 			filterView.SetDisabled(false)
-			app.SetFocus(filterView)
-			app.Draw()
+			tviewApp.SetFocus(filterView)
+			tviewApp.Draw()
 		case eventCancelFilter:
 			if !isFilterViewActive {
 				return
@@ -98,18 +99,18 @@ func processControlsEvents(ctx context.Context, app *tview.Application, commands
 			absoluteCommandIndex := getAbsoluteCommandIndex(commandsView, filteredCommands)
 			filteredCommands = initialCommands
 			commandsView.Clear()
-			populateCommandsView(ctx, app, commandsView, filteredCommands)
+			populateCommandsView(ctx, commandsView, app, filteredCommands)
 			commandsView.SetCurrentItem(absoluteCommandIndex)
-			app.SetFocus(commandsView)
-			app.Draw()
+			tviewApp.SetFocus(commandsView)
+			tviewApp.Draw()
 		case eventFinishFilter:
 			if !isFilterViewActive {
 				return
 			}
 			isFilterViewActive = false
 			filterView.SetDisabled(true)
-			app.SetFocus(commandsView)
-			app.Draw()
+			tviewApp.SetFocus(commandsView)
+			tviewApp.Draw()
 		case eventRefreshContentByFilter:
 			newText := filterView.GetText()
 			if currentText == newText {
@@ -120,7 +121,7 @@ func processControlsEvents(ctx context.Context, app *tview.Application, commands
 			commands, index := filterCommands(initialCommands, absoluteCommandIndex, newText)
 			filteredCommands = commands
 			commandsView.Clear()
-			populateCommandsView(ctx, app, commandsView, commands)
+			populateCommandsView(ctx, commandsView, app, commands)
 			commandsView.SetCurrentItem(index)
 		}
 	})
@@ -160,15 +161,15 @@ func filterCommands(items []commandViewItem, absoluteFocusedIndex int, text stri
 	return filteredItems, focusedIndex
 }
 
-func populateCommandsView(ctx context.Context, app *tview.Application, commandsView *tview.List, items []commandViewItem) {
+func populateCommandsView(ctx context.Context, commandsView *tview.List, app *application.Application, items []commandViewItem) {
 	for _, item := range items {
-		addCommandView(ctx, app, commandsView, item.Command)
+		addCommandView(ctx, commandsView, app, item)
 	}
 }
 
-func addCommandView(ctx context.Context, app *tview.Application, listView *tview.List, command config.Command) {
-	listView.AddItem(command.Name, command.Description, 0, func() {
-		app.Stop()
-		executor.ExecuteCommand(ctx, command.Args, command.Environment)
+func addCommandView(ctx context.Context, listView *tview.List, app *application.Application, item commandViewItem) {
+	properties := item.CommandProperties
+	listView.AddItem(properties.Name, properties.Description, 0, func() {
+		item.Command.Execute(ctx, app)
 	})
 }

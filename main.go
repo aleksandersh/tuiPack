@@ -4,21 +4,20 @@ import (
 	"context"
 	"log"
 
-	"github.com/aleksandersh/tuiPack/app"
-	"github.com/aleksandersh/tuiPack/app/command"
-	"github.com/aleksandersh/tuiPack/app/config"
+	"github.com/aleksandersh/tuiPack/cli"
+	"github.com/aleksandersh/tuiPack/launcher"
 )
 
 func main() {
-	args := app.GetArgs()
+	args := cli.GetArgs()
 
-	config, err := config.ReadConfigFromYamlFile(args.Config)
+	config, err := launcher.ReadConfigFromYamlFile(args.Config)
 	if err != nil {
 		log.Fatalf("failed to read config: %v", err)
 	}
 
 	if args.Aliases {
-		command.PrintAliases(args, config)
+		cli.PrintAliases(args, config)
 		return
 	}
 
@@ -26,9 +25,9 @@ func main() {
 	defer cancel()
 
 	if args.Script != "" {
-		command.ExecuteScript(ctx, config, args.Script)
+		cli.ExecuteScript(ctx, config, args.Script)
 		return
 	}
 
-	command.RunTuiApp(ctx, config)
+	cli.RunTuiApp(ctx, config)
 }

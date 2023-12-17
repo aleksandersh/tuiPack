@@ -1,10 +1,10 @@
-package command
+package cli
 
 import (
 	"context"
 	"log"
 
-	"github.com/aleksandersh/tuiPack/app/config"
+	"github.com/aleksandersh/tuiPack/config"
 	"github.com/aleksandersh/tuiPack/tui"
 )
 
