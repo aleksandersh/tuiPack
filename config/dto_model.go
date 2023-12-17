@@ -1,4 +1,4 @@
-package launcher
+package config
 
 type packDto struct {
 	Name        string       `yaml:"name"`

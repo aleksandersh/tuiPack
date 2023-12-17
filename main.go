@@ -5,13 +5,13 @@ import (
 	"log"
 
 	"github.com/aleksandersh/tuiPack/cli"
-	"github.com/aleksandersh/tuiPack/launcher"
+	"github.com/aleksandersh/tuiPack/config"
 )
 
 func main() {
 	args := cli.GetArgs()
 
-	config, err := launcher.ReadConfigFromYamlFile(args.Config)
+	config, err := config.ReadConfigFromYamlFile(args.Config)
 	if err != nil {
 		log.Fatalf("failed to read config: %v", err)
 	}

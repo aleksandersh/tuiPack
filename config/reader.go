@@ -1,4 +1,4 @@
-package launcher
+package config
 
 import (
 	"errors"
@@ -8,7 +8,6 @@ import (
 
 	"github.com/aleksandersh/tuiPack/command"
 	"github.com/aleksandersh/tuiPack/command/script"
-	"github.com/aleksandersh/tuiPack/config"
 	"github.com/mattn/go-shellwords"
 	"gopkg.in/yaml.v3"
 )
@@ -22,7 +21,7 @@ var (
 	errorFailedToParseEnvironment = errors.New("failed to parse environment")
 )
 
-func ReadConfigFromYamlFile(path string) (*config.Pack, error) {
+func ReadConfigFromYamlFile(path string) (*Pack, error) {
 	file, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("error in os.ReadFile: %w", err)
@@ -47,7 +46,7 @@ func ReadConfigFromYamlFile(path string) (*config.Pack, error) {
 		return nil, err
 	}
 
-	return config.New(pack.Name, pack.Version, commands), nil
+	return New(pack.Name, pack.Version, commands), nil
 }
 
 func parseCommands(configDir string, executionDir string, pack *packDto) ([]command.Command, error) {
