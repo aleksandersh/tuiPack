@@ -49,7 +49,7 @@ func ReadConfigFromYamlFile(path string) (*Pack, error) {
 	return New(pack.Name, pack.Version, commands), nil
 }
 
-func parseCommands(configDir string, executionDir string, pack *packDto) ([]command.Command, error) {
+func parseCommands(configDir string, executionDir string, pack *packDto) ([]command.CommandEntity, error) {
 	envExecutionDirEntry := fmt.Sprintf("%s=%s", envExecutionDir, executionDir)
 	envConfigDirEntry := fmt.Sprintf("%s=%s", envConfigDir, configDir)
 	packEnvEntries, err := parseEnvEntries(pack.Environment)
@@ -58,7 +58,8 @@ func parseCommands(configDir string, executionDir string, pack *packDto) ([]comm
 	}
 	parser := shellwords.NewParser()
 	parser.ParseEnv = true
-	parsedCommands := make([]command.Command, 0, len(pack.Commands))
+	scriptFactory := script.ScriptFactory{}
+	parsedCommands := make([]command.CommandEntity, 0, len(pack.Commands))
 	for _, cmd := range pack.Commands {
 		if cmd.Script == "" {
 			return nil, fmt.Errorf("missing command script: %v", cmd)
@@ -99,9 +100,8 @@ func parseCommands(configDir string, executionDir string, pack *packDto) ([]comm
 		}
 		environment := append(append(pack.Environment, cmd.Environment...), envExecutionDirEntry, envConfigDirEntry)
 		properties := command.NewProperties(name, cmd.Description, cmd.Alias)
-		scriptFactory := script.ScriptFactory{}
 		script := scriptFactory.CreateComand(properties, args, environment)
-		parsedCommands = append(parsedCommands, script)
+		parsedCommands = append(parsedCommands, *script)
 	}
 	return parsedCommands, nil
 }

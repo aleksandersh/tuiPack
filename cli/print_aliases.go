@@ -14,8 +14,8 @@ const (
 func PrintAliases(args *Args, config *config.Pack) {
 	fmt.Printf("Usage: tuiPack --script ALIAS\n\n")
 	fmt.Printf("Aliases for available scripts:\n")
-	for _, command := range config.Commands {
-		properties := command.GetProperties()
+	for _, entity := range config.CommandEntities {
+		properties := entity.Properties
 		if properties.Alias == "" {
 			continue
 		}

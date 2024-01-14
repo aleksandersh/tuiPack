@@ -7,12 +7,12 @@ import (
 )
 
 type CommandFactory interface {
-	CreateComand(properties *Properties) *Command
+	CreateComand(properties *Properties) *CommandEntity
 }
 
-type Command interface {
-	GetProperties() *Properties
-	Execute(ctx context.Context, app *application.Application)
+type CommandEntity struct {
+	Command    Command
+	Properties *Properties
 }
 
 type Properties struct {
@@ -21,10 +21,18 @@ type Properties struct {
 	Alias       string
 }
 
+type Command interface {
+	Execute(ctx context.Context, app *application.Application, props *Properties)
+}
+
 func NewProperties(Name string, Description string, Alias string) *Properties {
 	return &Properties{
 		Name:        Name,
 		Description: Description,
 		Alias:       Alias,
 	}
+}
+
+func NewEntity(properties *Properties, command Command) *CommandEntity {
+	return &CommandEntity{Command: command, Properties: properties}
 }

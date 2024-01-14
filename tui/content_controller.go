@@ -23,8 +23,8 @@ type contentController struct {
 	events chan controllerEvent
 }
 
-func newContentController(ctx context.Context, app *tview.Application, commandsView *tview.List, filterView *tview.TextArea, commands []command.Command) *contentController {
-	initialCommands := mapCommandsToViewItems(commands)
+func newContentController(ctx context.Context, app *tview.Application, commandsView *tview.List, filterView *tview.TextArea, commandEntities []command.CommandEntity) *contentController {
+	initialCommands := mapCommandsToViewItems(commandEntities)
 	events := make(chan controllerEvent, 100)
 	contentState := contentController{events: events}
 	go processControlsEvents(ctx, app, commandsView, filterView, initialCommands, events)
@@ -168,8 +168,8 @@ func populateCommandsView(ctx context.Context, commandsView *tview.List, app *ap
 }
 
 func addCommandView(ctx context.Context, listView *tview.List, app *application.Application, item commandViewItem) {
-	properties := item.CommandProperties
+	properties := item.CommandEntity.Properties
 	listView.AddItem(properties.Name, properties.Description, 0, func() {
-		item.Command.Execute(ctx, app)
+		item.CommandEntity.Command.Execute(ctx, app, properties)
 	})
 }

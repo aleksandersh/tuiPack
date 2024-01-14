@@ -1,12 +1,11 @@
 package script
 
-import (
-	"github.com/aleksandersh/tuiPack/command"
-)
+import "github.com/aleksandersh/tuiPack/command"
 
 type ScriptFactory struct {
 }
 
-func (sf ScriptFactory) CreateComand(properties *command.Properties, args []string, env []string) command.Command {
-	return newScript(properties, args, env)
+func (sf *ScriptFactory) CreateComand(properties *command.Properties, args []string, env []string) *command.CommandEntity {
+	cmd := newScript(properties, args, env)
+	return command.NewEntity(properties, cmd)
 }

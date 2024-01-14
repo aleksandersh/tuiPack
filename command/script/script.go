@@ -22,11 +22,11 @@ func newScript(properties *command.Properties, args []string, env []string) *Scr
 	return &Script{properties: properties, args: args, env: env}
 }
 
-func (script Script) GetProperties() *command.Properties {
+func (script *Script) GetProperties() *command.Properties {
 	return script.properties
 }
 
-func (script Script) Execute(ctx context.Context, app *application.Application) {
+func (script *Script) Execute(ctx context.Context, app *application.Application, props *command.Properties) {
 	app.Ui.Close()
 	execute(ctx, script.args, script.env)
 }

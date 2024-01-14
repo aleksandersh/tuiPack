@@ -9,11 +9,10 @@ import (
 )
 
 func ExecuteScript(ctx context.Context, config *config.Pack, alias string) {
-	for _, command := range config.Commands {
-		properties := command.GetProperties()
-		if properties.Alias == alias {
+	for _, entity := range config.CommandEntities {
+		if entity.Properties.Alias == alias {
 			app := application.NewApplication(application.NewController(nil))
-			command.Execute(ctx, app)
+			entity.Command.Execute(ctx, app, entity.Properties)
 			return
 		}
 	}

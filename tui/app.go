@@ -21,7 +21,7 @@ func RunApp(ctx context.Context, config *config.Pack) error {
 	filterView := createFilterView()
 	containerView := createContainerView(commandsView, filterView)
 
-	setupContent(ctx, app, commandsView, filterView, config.Commands)
+	setupContent(ctx, app, commandsView, filterView, config.CommandEntities)
 
 	app.SetRoot(containerView, true).SetFocus(commandsView)
 	if err := app.Run(); err != nil {
@@ -63,8 +63,8 @@ func createContainerView(commandsView tview.Primitive, filterView tview.Primitiv
 	return containerView
 }
 
-func setupContent(ctx context.Context, app *tview.Application, commandsView *tview.List, filterView *tview.TextArea, commands []command.Command) {
-	contentController := newContentController(ctx, app, commandsView, filterView, commands)
+func setupContent(ctx context.Context, app *tview.Application, commandsView *tview.List, filterView *tview.TextArea, commandEntities []command.CommandEntity) {
+	contentController := newContentController(ctx, app, commandsView, filterView, commandEntities)
 	isFilterViewActive := false
 	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if !isFilterViewActive {
