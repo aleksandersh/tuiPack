@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/aleksandersh/tuiPack/command"
-	"github.com/aleksandersh/tuiPack/config"
+	"github.com/aleksandersh/tuiPack/pack"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
@@ -14,14 +14,14 @@ const (
 	keySlash = 47
 )
 
-func RunApp(ctx context.Context, config *config.Pack) error {
+func RunApp(ctx context.Context, pack *pack.Pack) error {
 	app := tview.NewApplication()
 
-	commandsView := createCommandsView(ctx, app, config)
+	commandsView := createCommandsView(ctx, app, pack)
 	filterView := createFilterView()
 	containerView := createContainerView(commandsView, filterView)
 
-	setupContent(ctx, app, commandsView, filterView, config.CommandEntities)
+	setupContent(ctx, app, commandsView, filterView, pack.CommandEntities)
 
 	app.SetRoot(containerView, true).SetFocus(commandsView)
 	if err := app.Run(); err != nil {
@@ -31,12 +31,12 @@ func RunApp(ctx context.Context, config *config.Pack) error {
 	return nil
 }
 
-func createCommandsView(ctx context.Context, app *tview.Application, config *config.Pack) *tview.List {
+func createCommandsView(ctx context.Context, app *tview.Application, pack *pack.Pack) *tview.List {
 	commandsView := tview.NewList()
 	commandsView.SetHighlightFullLine(true).
 		ShowSecondaryText(false).
 		SetWrapAround(false).
-		SetTitle(config.Name).
+		SetTitle(pack.Name).
 		SetBorder(true)
 
 	return commandsView

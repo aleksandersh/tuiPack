@@ -4,17 +4,17 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/aleksandersh/tuiPack/config"
+	"github.com/aleksandersh/tuiPack/pack"
 )
 
 const (
 	leftColumnAliasLength = 30
 )
 
-func PrintAliases(args *Args, config *config.Pack) {
+func PrintAliases(args *Args, pack *pack.Pack) {
 	fmt.Printf("Usage: tuiPack --script ALIAS\n\n")
 	fmt.Printf("Aliases for available scripts:\n")
-	for _, entity := range config.CommandEntities {
+	for _, entity := range pack.CommandEntities {
 		properties := entity.Properties
 		if properties.Alias == "" {
 			continue

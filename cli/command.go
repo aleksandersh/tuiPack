@@ -5,16 +5,16 @@ import (
 	"log"
 
 	"github.com/aleksandersh/tuiPack/application"
-	"github.com/aleksandersh/tuiPack/config"
+	"github.com/aleksandersh/tuiPack/pack"
 )
 
-func ExecuteScript(ctx context.Context, config *config.Pack, alias string) {
-	for _, entity := range config.CommandEntities {
+func ExecuteScript(ctx context.Context, pack *pack.Pack, alias string) {
+	for _, entity := range pack.CommandEntities {
 		if entity.Properties.Alias == alias {
 			app := application.NewApplication(application.NewController(nil))
 			entity.Command.Execute(ctx, app, entity.Properties)
 			return
 		}
 	}
-	log.Fatalf("failed to find command by alias: %s", alias)
+	log.Fatalf("failed to find a command by the alias: %s", alias)
 }

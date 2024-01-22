@@ -6,8 +6,8 @@ import (
 	"github.com/aleksandersh/tuiPack/application"
 )
 
-type CommandFactory interface {
-	CreateComand(properties *Properties) *CommandEntity
+type Parser interface {
+	Parse(data map[string]interface{}, properties *Properties) (*CommandEntity, error)
 }
 
 type CommandEntity struct {
@@ -19,17 +19,19 @@ type Properties struct {
 	Name        string
 	Description string
 	Alias       string
+	Environment map[string]string
 }
 
 type Command interface {
 	Execute(ctx context.Context, app *application.Application, props *Properties)
 }
 
-func NewProperties(Name string, Description string, Alias string) *Properties {
+func NewProperties(name string, description string, alias string, env map[string]string) *Properties {
 	return &Properties{
-		Name:        Name,
-		Description: Description,
-		Alias:       Alias,
+		Name:        name,
+		Description: description,
+		Alias:       alias,
+		Environment: env,
 	}
 }
 
