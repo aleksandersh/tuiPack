@@ -4,9 +4,9 @@ A tool for organizing frequently used commands within the terminal user interfac
 
 You can describe a set of commands in a single YAML file and easily access them from the terminal interface.
 
-Follow the example from the [examples catalog](./example).
+Follow the example from the [examples catalog](./example) or watch the [GIF record](./example/tuiPackExample.gif "Example")
 
-![tuiPack example](./example/tuiPackExample.gif "Example")
+![tuiPack example](./example/tuiPackExample.png "Example")
 
 ## Usage
 
@@ -19,7 +19,7 @@ tuiPack --help
 
 ```bash
 # start the terminal user interface with commands from the specified config
-tuiPack --config ./tuiPackConfig.yml
+tuiPack --config ./example/commandPack.toml
 ```
 
 #### Hotkeys
@@ -30,29 +30,33 @@ tuiPack --config ./tuiPackConfig.yml
 
 ```bash
 # show available commands
-tuiPack --config ./tuiPackConfig.yml --aliases
+tuiPack --config ./commandPack.toml --aliases
 # execute "list_files" command
-tuiPack --config ./tuiPackConfig.yml --script list_files
+tuiPack --config ./commandPack.toml --script list_files
 ```
 
-## YML config
+## TOML config
 
 ##### additional environment variables
 
-`TUI_PACK_CONFIG_DIR` - absolute path of the config directory  
-`TUI_PACK_EXECUTION_DIR` - absolute path of the executuon directory  
+`COMMAND_PACK_DIR` - absolute path of the config directory  
+`COMMAND_PACK_EXECUTION_DIR` - absolute path of the executuon directory  
 
 ##### example
 
-```yml
-name: command pack name
-environment:
-  - ENV_1=VALUE
-commands:
-  - name: command displayed name
-    environment:
-    - ENV_2=VALUE
-    script: echo "$ENV_1" "$ENV_2"
-    alias: command_alias_for_terminal
-    description: description of the command
+```toml
+name = "Command pack name"
+
+[[commands]]
+name = "command displayed name"
+type = "script"
+script = 'echo "$ENV_1" "$ENV_2"'
+alias = "command_alias_for_terminal"
+description = "description of the command"
+
+[commands.env]
+ENV_2 = "ENV_2_VALUE"
+
+[env]
+ENV_1 = "ENV_1_VALUE"
 ```
