@@ -6,8 +6,13 @@ import (
 	"github.com/aleksandersh/tuiPack/application"
 )
 
-type Parser interface {
-	Parse(data map[string]interface{}, properties *Properties) (*CommandEntity, error)
+const (
+	CommandTypeScript      = "script"
+	CommandTypeInlinedPack = "inlined_pack"
+)
+
+type Command interface {
+	Execute(ctx context.Context, app *application.Application, props *Properties)
 }
 
 type CommandEntity struct {
@@ -20,10 +25,6 @@ type Properties struct {
 	Description string
 	Alias       string
 	Environment map[string]string
-}
-
-type Command interface {
-	Execute(ctx context.Context, app *application.Application, props *Properties)
 }
 
 func NewProperties(name string, description string, alias string, env map[string]string) *Properties {

@@ -5,16 +5,19 @@ import (
 	"log"
 
 	"github.com/aleksandersh/tuiPack/cli"
-	"github.com/aleksandersh/tuiPack/command"
-	"github.com/aleksandersh/tuiPack/command/script"
-	"github.com/aleksandersh/tuiPack/pack/loader"
+	"github.com/aleksandersh/tuiPack/loader"
+	"github.com/aleksandersh/tuiPack/pack"
+	"github.com/aleksandersh/tuiPack/pack/command"
+	"github.com/aleksandersh/tuiPack/pack/command/inlined"
+	"github.com/aleksandersh/tuiPack/pack/command/script"
 )
 
 func main() {
 	args := cli.GetArgs()
 
-	parsers := map[string]command.Parser{
-		"script": script.NewParser(),
+	parsers := map[string]pack.Parser{
+		command.CommandTypeScript:      script.NewParser(),
+		command.CommandTypeInlinedPack: inlined.NewParser(),
 	}
 	loader := loader.New(parsers)
 	pack, err := loader.Load(args.Config)

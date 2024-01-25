@@ -10,56 +10,51 @@ import (
 	"syscall"
 
 	"github.com/aleksandersh/tuiPack/application"
-	"github.com/aleksandersh/tuiPack/command"
+	"github.com/aleksandersh/tuiPack/pack/command"
 	"github.com/mattn/go-shellwords"
 )
 
-type Script struct {
-	properties *command.Properties
-	script     string
+type scriptCommand struct {
+	script string
 }
 
-func newScript(properties *command.Properties, script string) *Script {
-	return &Script{properties: properties, script: script}
+func newScript(script string) *scriptCommand {
+	return &scriptCommand{script: script}
 }
 
-func (script *Script) GetProperties() *command.Properties {
-	return script.properties
-}
-
-func (script *Script) Execute(ctx context.Context, app *application.Application, props *command.Properties) {
+func (cmd *scriptCommand) Execute(ctx context.Context, app *application.Application, props *command.Properties) {
 	app.Ui.Close()
 
-	args, err := script.parseScript()
+	args, err := cmd.parseScript(props)
 	if err != nil {
 		log.Fatalf("error in script.parseScript: %v", err)
 		return
 	}
 
-	env := script.prepareEnv()
+	env := cmd.prepareEnv(props)
 
 	execute(ctx, args, env)
 }
 
-func (script *Script) parseScript() ([]string, error) {
+func (cmd *scriptCommand) parseScript(props *command.Properties) ([]string, error) {
 	parser := shellwords.NewParser()
 	parser.ParseEnv = true
 	parser.Getenv = func(env string) string {
-		if value, contains := script.properties.Environment[env]; contains {
+		if value, contains := props.Environment[env]; contains {
 			return value
 		}
 		return os.Getenv(env)
 	}
-	args, err := parser.Parse(script.script)
+	args, err := parser.Parse(cmd.script)
 	if err != nil {
 		return []string{}, fmt.Errorf("error in parser.Parse: %w", err)
 	}
 	return args, nil
 }
 
-func (script *Script) prepareEnv() []string {
-	env := make([]string, 0, len(script.properties.Environment))
-	for key, value := range script.properties.Environment {
+func (cmd *scriptCommand) prepareEnv(props *command.Properties) []string {
+	env := make([]string, 0, len(props.Environment))
+	for key, value := range props.Environment {
 		env = append(env, fmt.Sprintf("%s=%s", key, value))
 	}
 	return env

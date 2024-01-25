@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 
 	"github.com/BurntSushi/toml"
-	"github.com/aleksandersh/tuiPack/command"
 	"github.com/aleksandersh/tuiPack/pack"
+	"github.com/aleksandersh/tuiPack/pack/command"
 )
 
 const (
@@ -16,40 +16,38 @@ const (
 )
 
 type Loader struct {
-	parsers map[string]command.Parser
+	parsers map[string]pack.Parser
 }
 
-type packDto struct {
-	fileDir      string
-	executionDir string
-	loader       *Loader
-	pack         *pack.Pack
+type loaderContext struct {
+	env    map[string]string
+	loader *Loader
+	pack   *pack.Pack
 }
 
-func New(parsers map[string]command.Parser) *Loader {
+func New(parsers map[string]pack.Parser) *Loader {
 	return &Loader{parsers: parsers}
 }
 
-func (dto *packDto) UnmarshalTOML(data interface{}) error {
+func (context *loaderContext) UnmarshalTOML(data interface{}) error {
 	root, success := data.(map[string]interface{})
 	if !success {
 		return fmt.Errorf("failed to parse pack")
 	}
 
-	strEnv := make(map[string]string)
-	strEnv[envFileDir] = dto.fileDir
-	strEnv[envExecutionDir] = dto.executionDir
-
-	packEnv, success := root["env"].(map[string]interface{})
-	if !success {
-		return fmt.Errorf("failed to parse pack environment")
-	}
-	for key, value := range packEnv {
-		str, success := value.(string)
+	packEnvData, success := root["env"]
+	if success {
+		packEnv, success := packEnvData.(map[string]interface{})
 		if !success {
-			return fmt.Errorf("failed to parse pack environment: key=%s", key)
+			return fmt.Errorf("failed to parse pack environment")
 		}
-		strEnv[key] = str
+		for key, value := range packEnv {
+			str, success := value.(string)
+			if !success {
+				return fmt.Errorf("failed to parse pack environment: key=%s", key)
+			}
+			context.env[key] = str
+		}
 	}
 
 	commands, success := root["commands"].([]map[string]interface{})
@@ -59,28 +57,28 @@ func (dto *packDto) UnmarshalTOML(data interface{}) error {
 	idx := 0
 	commandEntities := make([]command.CommandEntity, 0, len(commands))
 	for _, cmd := range commands {
-		entity, err := dto.parseCommand(cmd, strEnv, idx)
+		entities, err := context.parseCommand(cmd, idx)
 		if err != nil {
 			return fmt.Errorf("failed to parse commands: %w", err)
 		}
-		commandEntities = append(commandEntities, *entity)
+		commandEntities = append(commandEntities, entities...)
 		idx++
 	}
 
 	packName := root["name"].(string)
-	dto.pack = &pack.Pack{
+	context.pack = &pack.Pack{
 		Name:            packName,
 		CommandEntities: commandEntities,
 	}
 	return nil
 }
 
-func (dto *packDto) parseCommand(data map[string]interface{}, env map[string]string, idx int) (*command.CommandEntity, error) {
+func (context *loaderContext) parseCommand(data map[string]interface{}, idx int) ([]command.CommandEntity, error) {
 	cmdType, success := data["type"].(string)
 	if !success {
-		return nil, fmt.Errorf("failed to parse command type: index=%d", idx)
+		cmdType = command.CommandTypeScript
 	}
-	parser, success := dto.loader.parsers[cmdType]
+	parser, success := context.loader.parsers[cmdType]
 	if !success {
 		return nil, fmt.Errorf("missing parser: type=%s, index=%d", cmdType, idx)
 	}
@@ -104,8 +102,8 @@ func (dto *packDto) parseCommand(data map[string]interface{}, env map[string]str
 			return nil, fmt.Errorf("failed to parse command alias: index=%d", idx)
 		}
 	}
-	cmdEnv := make(map[string]string, 0)
-	for key, value := range env {
+	cmdEnv := make(map[string]string, len(context.env))
+	for key, value := range context.env {
 		cmdEnv[key] = value
 	}
 	cmdEnvData, success := data["env"]
@@ -124,11 +122,11 @@ func (dto *packDto) parseCommand(data map[string]interface{}, env map[string]str
 	}
 
 	properties := command.NewProperties(cmdName, cmdDescription, cmdAlias, cmdEnv)
-	cmd, err := parser.Parse(data, properties)
+	entities, err := parser.Parse(data, properties, context)
 	if err != nil {
 		return nil, fmt.Errorf("error in parser.Parse: %w", err)
 	}
-	return cmd, nil
+	return entities, nil
 }
 
 func (loader *Loader) Load(path string) (*pack.Pack, error) {
@@ -141,15 +139,44 @@ func (loader *Loader) Load(path string) (*pack.Pack, error) {
 		return nil, fmt.Errorf("error in os.Getwd: %w", err)
 	}
 
+	env := make(map[string]string, 2)
+	env[envFileDir] = configDir
+	env[envExecutionDir] = executionDir
+
 	file, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("error in os.ReadFile: %w", err)
 	}
 
-	dto := &packDto{fileDir: configDir, executionDir: executionDir, loader: loader}
-	err = toml.Unmarshal(file, dto)
+	newContext := &loaderContext{env: env, loader: loader}
+	err = toml.Unmarshal(file, newContext)
 	if err != nil {
 		return nil, fmt.Errorf("error in toml.Unmarshal: %w", err)
 	}
-	return dto.pack, nil
+	return newContext.pack, nil
+}
+
+func (context *loaderContext) Load(path string) (*pack.Pack, error) {
+	configDir, err := filepath.Abs(filepath.Dir(path))
+	if err != nil {
+		return nil, fmt.Errorf("error in filepath.Abs: %w", err)
+	}
+
+	env := make(map[string]string, len(context.env))
+	for key, value := range context.env {
+		env[key] = value
+	}
+	env[envFileDir] = configDir
+
+	file, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("error in os.ReadFile: %w", err)
+	}
+
+	newContext := &loaderContext{env: env, loader: context.loader}
+	err = toml.Unmarshal(file, newContext)
+	if err != nil {
+		return nil, fmt.Errorf("error in toml.Unmarshal: %w", err)
+	}
+	return newContext.pack, nil
 }

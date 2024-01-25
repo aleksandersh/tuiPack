@@ -2,7 +2,7 @@
 
 A tool for organizing frequently used commands within the terminal user interface.
 
-You can describe a set of commands in a single YAML file and easily access them from the terminal interface.
+You can describe a set of commands in a single TOML file and easily access them from the terminal interface.
 
 Follow the example from the [examples catalog](./example) or watch the [GIF record](./example/tuiPackExample.gif "Example")
 

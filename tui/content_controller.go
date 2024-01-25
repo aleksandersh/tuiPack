@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/aleksandersh/tuiPack/application"
-	"github.com/aleksandersh/tuiPack/command"
+	"github.com/aleksandersh/tuiPack/pack/command"
 	"github.com/rivo/tview"
 )
 

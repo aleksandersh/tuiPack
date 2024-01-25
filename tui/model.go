@@ -3,7 +3,7 @@ package tui
 import (
 	"strings"
 
-	"github.com/aleksandersh/tuiPack/command"
+	"github.com/aleksandersh/tuiPack/pack/command"
 )
 
 type commandViewItem struct {

@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/aleksandersh/tuiPack/command"
 	"github.com/aleksandersh/tuiPack/pack"
+	"github.com/aleksandersh/tuiPack/pack/command"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )

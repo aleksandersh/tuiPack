@@ -68,5 +68,11 @@ script = '$COMMAND_PACK_DIR/build.sh windows-amd64 exe'
 GOOS = "windows"
 GOARCH = "amd64"
 
+[[commands]]
+name = "inlined pack"
+type = "inlined_pack"
+path = '$COMMAND_PACK_DIR/commandPack2.toml'
+alias_prefix = "pack2_"
+
 [env]
 WELCOME_MESSAGE = "HELLO WORLD!"
