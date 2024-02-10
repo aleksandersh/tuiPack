@@ -27,6 +27,15 @@ func (parser *inlinedPackParser) Parse(data map[string]interface{}, properties *
 		return nil, err
 	}
 
+	namePrefix := ""
+	namePrefixData, success := data["name_prefix"]
+	if success {
+		namePrefix, success = namePrefixData.(string)
+		if !success {
+			return nil, fmt.Errorf("failed to parse name_prefix")
+		}
+	}
+
 	aliasPrefix := ""
 	aliasPrefixData, success := data["alias_prefix"]
 	if success {
@@ -35,13 +44,15 @@ func (parser *inlinedPackParser) Parse(data map[string]interface{}, properties *
 			return nil, fmt.Errorf("failed to parse alias_prefix")
 		}
 	}
+
 	pack, err := loader.Load(path)
 	if err != nil {
 		return nil, fmt.Errorf("error in loader.Load: %w", err)
 	}
 	entities := pack.CommandEntities
-	if aliasPrefix != "" {
+	if namePrefix != "" || aliasPrefix != "" {
 		for _, entity := range entities {
+			entity.Properties.Name = namePrefix + entity.Properties.Name
 			if entity.Properties.Alias != "" {
 				entity.Properties.Alias = aliasPrefix + entity.Properties.Alias
 			}

@@ -23,9 +23,10 @@ path = '$COMMAND_PACK_DIR/echoCommandPack.toml'
 WORD_2 = "WORLD"
 
 [[commands]]
-name = "inlined pack"
+name = "build tui pack"
 type = "inlined_pack"
 path = '$COMMAND_PACK_DIR/build/buildCommandPack.toml'
+name_prefix = "build tui pack: "
 alias_prefix = "build_"
 
 [env]
