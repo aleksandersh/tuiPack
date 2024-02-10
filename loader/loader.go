@@ -20,9 +20,10 @@ type Loader struct {
 }
 
 type loaderContext struct {
-	env    map[string]string
-	loader *Loader
-	pack   *pack.Pack
+	env             map[string]string
+	configFileStack []string
+	loader          *Loader
+	pack            *pack.Pack
 }
 
 func New(parsers map[string]pack.Parser) *Loader {
@@ -122,7 +123,7 @@ func (context *loaderContext) parseCommand(data map[string]interface{}, idx int)
 	}
 
 	properties := command.NewProperties(cmdName, cmdDescription, cmdAlias, cmdEnv)
-	newContext := &loaderContext{env: cmdEnv, loader: context.loader}
+	newContext := &loaderContext{env: cmdEnv, configFileStack: context.configFileStack, loader: context.loader}
 	entities, err := parser.Parse(data, properties, newContext)
 	if err != nil {
 		return nil, fmt.Errorf("error in parser.Parse: %w", err)
@@ -131,6 +132,10 @@ func (context *loaderContext) parseCommand(data map[string]interface{}, idx int)
 }
 
 func (loader *Loader) Load(path string) (*pack.Pack, error) {
+	path, err := filepath.Abs(path)
+	if err != nil {
+		return nil, fmt.Errorf("error in filepath.Abs: %w", err)
+	}
 	configDir, err := filepath.Abs(filepath.Dir(path))
 	if err != nil {
 		return nil, fmt.Errorf("error in filepath.Abs: %w", err)
@@ -149,7 +154,7 @@ func (loader *Loader) Load(path string) (*pack.Pack, error) {
 		return nil, fmt.Errorf("error in os.ReadFile: %w", err)
 	}
 
-	newContext := &loaderContext{env: env, loader: loader}
+	newContext := &loaderContext{env: env, configFileStack: []string{path}, loader: loader}
 	err = toml.Unmarshal(file, newContext)
 	if err != nil {
 		return nil, fmt.Errorf("error in toml.Unmarshal: %w", err)
@@ -158,6 +163,17 @@ func (loader *Loader) Load(path string) (*pack.Pack, error) {
 }
 
 func (context *loaderContext) Load(path string) (*pack.Pack, error) {
+	path, err := filepath.Abs(path)
+	if err != nil {
+		return nil, fmt.Errorf("error in filepath.Abs: %w", err)
+	}
+	for _, file := range context.configFileStack {
+		if file == path {
+			configs := append(context.configFileStack, path)
+			return nil, fmt.Errorf("configs looping was detected: %v", configs)
+		}
+	}
+
 	configDir, err := filepath.Abs(filepath.Dir(path))
 	if err != nil {
 		return nil, fmt.Errorf("error in filepath.Abs: %w", err)
@@ -174,7 +190,8 @@ func (context *loaderContext) Load(path string) (*pack.Pack, error) {
 		return nil, fmt.Errorf("error in os.ReadFile: %w", err)
 	}
 
-	newContext := &loaderContext{env: env, loader: context.loader}
+	configFileStack := append(context.configFileStack, path)
+	newContext := &loaderContext{env: env, configFileStack: configFileStack, loader: context.loader}
 	err = toml.Unmarshal(file, newContext)
 	if err != nil {
 		return nil, fmt.Errorf("error in toml.Unmarshal: %w", err)
