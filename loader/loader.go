@@ -122,7 +122,8 @@ func (context *loaderContext) parseCommand(data map[string]interface{}, idx int)
 	}
 
 	properties := command.NewProperties(cmdName, cmdDescription, cmdAlias, cmdEnv)
-	entities, err := parser.Parse(data, properties, context)
+	newContext := &loaderContext{env: cmdEnv, loader: context.loader}
+	entities, err := parser.Parse(data, properties, newContext)
 	if err != nil {
 		return nil, fmt.Errorf("error in parser.Parse: %w", err)
 	}

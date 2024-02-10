@@ -1,0 +1,14 @@
+name = "Example pack"
+
+[[commands]]
+name = "print message from env"
+type = "script"
+script = 'echo "$WORD_1$DELIMITER$WORD_2$MESSAGE_END"'
+alias = "print_message_from_env"
+description = "print a message from the environment"
+
+[commands.env]
+DELIMITER = ", "
+
+[env]
+MESSAGE_END = "!"

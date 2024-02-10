@@ -15,64 +15,18 @@ alias = "print_config_dir"
 description = "print a directory of the config file"
 
 [[commands]]
-name = "print welcome message"
-type = "script"
-script = 'echo "$WELCOME_MESSAGE"'
-alias = "print_welcome_message"
-description = "print a welcome message from the environment"
-
-[[commands]]
-name = "build TUI Pack - darwin (amd64)"
-type = "script"
-script = '$COMMAND_PACK_DIR/build.sh darwin-amd64'
-description = "Darwin (Apple), Apple silicon"
+name = "inlined pack"
+type = "inlined_pack"
+path = '$COMMAND_PACK_DIR/echoCommandPack.toml'
 
 [commands.env]
-GOOS = "darwin"
-GOARCH = "amd64"
-
-[[commands]]
-name = "build TUI Pack - darwin (arm64)"
-type = "script"
-script = '$COMMAND_PACK_DIR/build.sh darwin-arm64'
-description = "Darwin (Apple), Intel"
-
-[commands.env]
-GOOS = "darwin"
-GOARCH = "arm64"
-
-[[commands]]
-name = "build TUI Pack - linux (amd64)"
-type = "script"
-script = '$COMMAND_PACK_DIR/build.sh linux-amd64'
-
-[commands.env]
-GOOS = "linux"
-GOARCH = "amd64"
-
-[[commands]]
-name = "build TUI Pack - linux (arm64)"
-type = "script"
-script = '$COMMAND_PACK_DIR/build.sh linux-arm64'
-
-[commands.env]
-GOOS = "linux"
-GOARCH = "arm64"
-
-[[commands]]
-name = "build TUI Pack - windows (amd64)"
-type = "script"
-script = '$COMMAND_PACK_DIR/build.sh windows-amd64 exe'
-
-[commands.env]
-GOOS = "windows"
-GOARCH = "amd64"
+WORD_2 = "WORLD"
 
 [[commands]]
 name = "inlined pack"
 type = "inlined_pack"
-path = '$COMMAND_PACK_DIR/commandPack2.toml'
-alias_prefix = "pack2_"
+path = '$COMMAND_PACK_DIR/build/buildCommandPack.toml'
+alias_prefix = "build_"
 
 [env]
-WELCOME_MESSAGE = "HELLO WORLD!"
+WORD_1 = "HELLO"

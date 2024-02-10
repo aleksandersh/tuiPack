@@ -42,7 +42,9 @@ func (parser *inlinedPackParser) Parse(data map[string]interface{}, properties *
 	entities := pack.CommandEntities
 	if aliasPrefix != "" {
 		for _, entity := range entities {
-			entity.Properties.Alias = aliasPrefix + entity.Properties.Alias
+			if entity.Properties.Alias != "" {
+				entity.Properties.Alias = aliasPrefix + entity.Properties.Alias
+			}
 		}
 	}
 	return entities, nil

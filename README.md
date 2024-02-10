@@ -30,9 +30,9 @@ tuiPack --config ./example/commandPack.toml
 
 ```bash
 # show available commands
-tuiPack --config ./commandPack.toml --aliases
-# execute "list_files" command
-tuiPack --config ./commandPack.toml --script list_files
+tuiPack --config ./example/commandPack.toml --aliases
+# execute "print_message_from_env" command
+tuiPack --config ./example/commandPack.toml --script print_message_from_env
 ```
 
 ## TOML config

@@ -3,7 +3,10 @@
 platform="$1"
 extension="$2"
 
-project_dir="$(realpath "$COMMAND_PACK_DIR/../")"
+project_dir="$(realpath "$COMMAND_PACK_DIR/../../")" || {
+    echo "failed to resolve COMMAND_PACK_DIR=$COMMAND_PACK_DIR/../../"
+    exit 1
+}
 binaries_dir="$project_dir/.bin"
 file_prefix="tuiPack"
 
