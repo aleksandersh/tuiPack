@@ -11,19 +11,24 @@ import (
 )
 
 const (
-	keySlash = 47
+	runeSlash = 47
+	runeD     = 100
 )
 
 func RunApp(ctx context.Context, pack *pack.Pack) error {
 	app := tview.NewApplication()
 
+	pagesView := tview.NewPages()
 	commandsView := createCommandsView(ctx, app, pack)
 	filterView := createFilterView()
 	containerView := createContainerView(commandsView, filterView)
 
-	setupContent(ctx, app, commandsView, filterView, pack.CommandEntities)
+	views := newAppViews(app, pagesView, commandsView, filterView)
+	setupContent(ctx, views, pack.CommandEntities)
 
-	app.SetRoot(containerView, true).SetFocus(commandsView)
+	pagesView.AddPage(pageNameContent, containerView, true, true)
+
+	app.SetRoot(pagesView, true).SetFocus(commandsView)
 	if err := app.Run(); err != nil {
 		return fmt.Errorf("error in app.Run: %w", err)
 	}
@@ -63,12 +68,21 @@ func createContainerView(commandsView tview.Primitive, filterView tview.Primitiv
 	return containerView
 }
 
-func setupContent(ctx context.Context, app *tview.Application, commandsView *tview.List, filterView *tview.TextArea, commandEntities []command.CommandEntity) {
-	contentController := newContentController(ctx, app, commandsView, filterView, commandEntities)
+func setupContent(ctx context.Context, views *appViews, commandEntities []command.CommandEntity) {
+	contentController := newContentController(ctx, views, commandEntities)
+	isDescriptionViewActive := false
 	isFilterViewActive := false
-	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+	views.app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if isDescriptionViewActive {
+			if event.Key() == tcell.KeyEsc {
+				contentController.HideDescription()
+				isDescriptionViewActive = false
+				return nil
+			}
+			return event
+		}
 		if !isFilterViewActive {
-			if event.Key() == tcell.KeyRune && event.Rune() == keySlash {
+			if event.Key() == tcell.KeyRune && event.Rune() == runeSlash {
 				contentController.ActivateFilter()
 				isFilterViewActive = true
 				return nil
@@ -77,8 +91,13 @@ func setupContent(ctx context.Context, app *tview.Application, commandsView *tvi
 				contentController.ResetFilter()
 				return nil
 			}
+			if event.Key() == tcell.KeyRune && event.Rune() == runeD {
+				contentController.ShowDescription()
+				isDescriptionViewActive = true
+				return nil
+			}
 		}
-		if !isFilterViewActive && event.Key() == tcell.KeyRune && event.Rune() == keySlash {
+		if !isFilterViewActive && event.Key() == tcell.KeyRune && event.Rune() == runeSlash {
 			contentController.ActivateFilter()
 			isFilterViewActive = true
 			return nil
@@ -98,7 +117,7 @@ func setupContent(ctx context.Context, app *tview.Application, commandsView *tvi
 		return event
 	})
 
-	filterView.SetChangedFunc(func() {
+	views.filter.SetChangedFunc(func() {
 		contentController.RefreshContentByFilter()
 	})
 }

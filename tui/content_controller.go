@@ -6,6 +6,7 @@ import (
 
 	"github.com/aleksandersh/tuiPack/application"
 	"github.com/aleksandersh/tuiPack/pack/command"
+	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
 
@@ -17,17 +18,19 @@ const (
 	eventCancelFilter
 	eventFinishFilter
 	eventRefreshContentByFilter
+	eventShowDescription
+	eventHideDescription
 )
 
 type contentController struct {
 	events chan controllerEvent
 }
 
-func newContentController(ctx context.Context, app *tview.Application, commandsView *tview.List, filterView *tview.TextArea, commandEntities []command.CommandEntity) *contentController {
+func newContentController(ctx context.Context, views *appViews, commandEntities []command.CommandEntity) *contentController {
 	initialCommands := mapCommandsToViewItems(commandEntities)
 	events := make(chan controllerEvent, 100)
 	contentState := contentController{events: events}
-	go processControlsEvents(ctx, app, commandsView, filterView, initialCommands, events)
+	go processControlsEvents(ctx, views, initialCommands, events)
 	return &contentState
 }
 
@@ -51,9 +54,17 @@ func (cs *contentController) RefreshContentByFilter() {
 	cs.events <- eventRefreshContentByFilter
 }
 
-func processControlsEvents(ctx context.Context, tviewApp *tview.Application, commandsView *tview.List, filterView *tview.TextArea, initialCommands []commandViewItem, events chan controllerEvent) {
-	app := application.NewApplication(application.NewController(tviewApp))
-	populateCommandsView(ctx, commandsView, app, initialCommands)
+func (cs *contentController) ShowDescription() {
+	cs.events <- eventShowDescription
+}
+
+func (cs *contentController) HideDescription() {
+	cs.events <- eventHideDescription
+}
+
+func processControlsEvents(ctx context.Context, views *appViews, initialCommands []commandViewItem, events chan controllerEvent) {
+	app := application.NewApplication(application.NewController(views.app))
+	populateCommandsView(ctx, views.commands, app, initialCommands)
 
 	filteredCommands := initialCommands
 	isFilterViewActive := false
@@ -66,63 +77,73 @@ func processControlsEvents(ctx context.Context, tviewApp *tview.Application, com
 				return
 			}
 			if currentText == "" {
-				if commandsView.GetCurrentItem() != 0 {
-					commandsView.SetCurrentItem(0)
-					tviewApp.Draw()
+				if views.commands.GetCurrentItem() != 0 {
+					views.commands.SetCurrentItem(0)
+					views.app.Draw()
 				}
 				return
 			}
 			currentText = ""
-			filterView.SetText("", true)
-			absoluteCommandIndex := getAbsoluteCommandIndex(commandsView, filteredCommands)
+			views.filter.SetText("", true)
+			absoluteCommandIndex := getAbsoluteCommandIndex(views.commands, filteredCommands)
 			filteredCommands = initialCommands
-			commandsView.Clear()
-			populateCommandsView(ctx, commandsView, app, filteredCommands)
-			commandsView.SetCurrentItem(absoluteCommandIndex)
-			tviewApp.Draw()
+			views.commands.Clear()
+			populateCommandsView(ctx, views.commands, app, filteredCommands)
+			views.commands.SetCurrentItem(absoluteCommandIndex)
+			views.app.Draw()
 		case eventActivateFilter:
 			if isFilterViewActive {
 				return
 			}
 			isFilterViewActive = true
-			filterView.SetDisabled(false)
-			tviewApp.SetFocus(filterView)
-			tviewApp.Draw()
+			views.filter.SetDisabled(false)
+			views.app.SetFocus(views.filter)
+			views.app.Draw()
 		case eventCancelFilter:
 			if !isFilterViewActive {
 				return
 			}
 			isFilterViewActive = false
 			currentText = ""
-			filterView.SetDisabled(true)
-			filterView.SetText("", true)
-			absoluteCommandIndex := getAbsoluteCommandIndex(commandsView, filteredCommands)
+			views.filter.SetDisabled(true)
+			views.filter.SetText("", true)
+			absoluteCommandIndex := getAbsoluteCommandIndex(views.commands, filteredCommands)
 			filteredCommands = initialCommands
-			commandsView.Clear()
-			populateCommandsView(ctx, commandsView, app, filteredCommands)
-			commandsView.SetCurrentItem(absoluteCommandIndex)
-			tviewApp.SetFocus(commandsView)
-			tviewApp.Draw()
+			views.commands.Clear()
+			populateCommandsView(ctx, views.commands, app, filteredCommands)
+			views.commands.SetCurrentItem(absoluteCommandIndex)
+			views.app.SetFocus(views.commands)
+			views.app.Draw()
 		case eventFinishFilter:
 			if !isFilterViewActive {
 				return
 			}
 			isFilterViewActive = false
-			filterView.SetDisabled(true)
-			tviewApp.SetFocus(commandsView)
-			tviewApp.Draw()
+			views.filter.SetDisabled(true)
+			views.app.SetFocus(views.commands)
+			views.app.Draw()
 		case eventRefreshContentByFilter:
-			newText := filterView.GetText()
+			newText := views.filter.GetText()
 			if currentText == newText {
 				return
 			}
 			currentText = newText
-			absoluteCommandIndex := getAbsoluteCommandIndex(commandsView, filteredCommands)
+			absoluteCommandIndex := getAbsoluteCommandIndex(views.commands, filteredCommands)
 			commands, index := filterCommands(initialCommands, absoluteCommandIndex, newText)
 			filteredCommands = commands
-			commandsView.Clear()
-			populateCommandsView(ctx, commandsView, app, commands)
-			commandsView.SetCurrentItem(index)
+			views.commands.Clear()
+			populateCommandsView(ctx, views.commands, app, commands)
+			views.commands.SetCurrentItem(index)
+		case eventShowDescription:
+			item := getCurrentCommandViewItem(views.commands, filteredCommands)
+			if item == nil {
+				return
+			}
+			views.pages.AddAndSwitchToPage(pageNameDescription, createDescriptionPage(item), true)
+			views.app.Draw()
+		case eventHideDescription:
+			views.pages.RemovePage(pageNameDescription)
+			views.app.Draw()
 		}
 	})
 }
@@ -138,13 +159,19 @@ func observeEvents(ctx context.Context, events chan controllerEvent, handler fun
 	}
 }
 
-func getAbsoluteCommandIndex(commandsView *tview.List, commands []commandViewItem) int {
+func getCurrentCommandViewItem(commandsView *tview.List, commands []commandViewItem) *commandViewItem {
 	currentItem := commandsView.GetCurrentItem()
-	absoluteFocusedIndex := 0
 	if currentItem >= 0 && len(commands) > 0 {
-		absoluteFocusedIndex = commands[currentItem].Index
+		return &commands[currentItem]
 	}
-	return absoluteFocusedIndex
+	return nil
+}
+
+func getAbsoluteCommandIndex(commandsView *tview.List, commands []commandViewItem) int {
+	if item := getCurrentCommandViewItem(commandsView, commands); item != nil {
+		return item.Index
+	}
+	return 0
 }
 
 func filterCommands(items []commandViewItem, absoluteFocusedIndex int, text string) ([]commandViewItem, int) {
@@ -172,4 +199,18 @@ func addCommandView(ctx context.Context, listView *tview.List, app *application.
 	listView.AddItem(properties.Name, properties.Description, 0, func() {
 		item.CommandEntity.Command.Execute(ctx, app, properties)
 	})
+}
+
+func createDescriptionPage(item *commandViewItem) tview.Primitive {
+	descriptionView := tview.NewTextView().SetText(item.CommandEntity.Properties.Name)
+	frame := tview.NewFrame(descriptionView)
+	frame.SetBorders(1, 0, 1, 1, 1, 1).
+		SetBorder(true).
+		SetTitle("Description")
+	frame.AddText(item.CommandEntity.Properties.Name, true, tview.AlignCenter, tcell.ColorWhite)
+	if item.CommandEntity.Properties.Alias != "" {
+		frame.AddText("alias: "+item.CommandEntity.Properties.Alias, true, tview.AlignCenter, tcell.ColorWhite)
+	}
+	frame.AddText("esc", false, tview.AlignRight, tcell.ColorWhite)
+	return frame
 }
