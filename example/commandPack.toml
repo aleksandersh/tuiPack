@@ -1,18 +1,18 @@
 name = "Example pack"
 
 [[commands]]
-name = "print execution dir"
-type = "script"
-script = 'echo "$COMMAND_PACK_EXECUTION_DIR"'
-alias = "print_execution_dir"
-description = "print the execution path"
-
-[[commands]]
 name = "print config dir"
 type = "script"
 script = 'echo "$COMMAND_PACK_DIR"'
 alias = "print_config_dir"
-description = "print a directory of the config file"
+description = "You can use the COMMAND_PACK_DIR environment variable to refer your config directory"
+
+[[commands]]
+name = "print execution dir"
+type = "script"
+script = 'echo "$COMMAND_PACK_EXECUTION_DIR"'
+alias = "print_execution_dir"
+description = "You can use the COMMAND_PACK_EXECUTION_DIR environment variable to refer to a directory from which the program is running"
 
 [[commands]]
 name = "inlined pack"
@@ -25,7 +25,7 @@ WORD_2 = "WORLD"
 [[commands]]
 name = "build tui pack"
 type = "inlined_pack"
-path = '$COMMAND_PACK_DIR/build/buildCommandPack.toml'
+path = '$COMMAND_PACK_DIR/build/commandPack.toml'
 name_prefix = "build tui pack: "
 alias_prefix = "build_"
 

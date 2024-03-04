@@ -25,6 +25,7 @@ tuiPack --config ./example/commandPack.toml
 #### Hotkeys
 
 `/` - to enter filtering mode
+`d` - to show a command description
 
 ### Execute a command by an alias
 

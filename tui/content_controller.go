@@ -202,7 +202,7 @@ func addCommandView(ctx context.Context, listView *tview.List, app *application.
 }
 
 func createDescriptionPage(item *commandViewItem) tview.Primitive {
-	descriptionView := tview.NewTextView().SetText(item.CommandEntity.Properties.Name)
+	descriptionView := tview.NewTextView().SetText(item.CommandEntity.Properties.Description)
 	frame := tview.NewFrame(descriptionView)
 	frame.SetBorders(1, 0, 1, 1, 1, 1).
 		SetBorder(true).

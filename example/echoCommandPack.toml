@@ -5,7 +5,7 @@ name = "print message from env"
 type = "script"
 script = 'echo "$WORD_1$DELIMITER$WORD_2$MESSAGE_END"'
 alias = "print_message_from_env"
-description = "print a message from the environment"
+description = "Environment variables can be set for a configuration file scope, command scope, and provided by a top-level configuration file"
 
 [commands.env]
 DELIMITER = ", "
